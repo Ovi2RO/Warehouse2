@@ -11,7 +11,7 @@ class Ui_MainWindow(object):
         self.main_window.sing_in_button.clicked.connect(self.login)
 
     def login(self):
-        conn = sqlite3.connect("/home/dci-student/Desktop/Ola/Database/08-23-Database/Data08.31/Warehouse2/Warehouse2/db/warehouse.db")
+        conn = sqlite3.connect("/home/dci-student/Desktop/Projects/PythonDB/db_09.01/db/warehouse.db")
         cursor = conn.cursor()
 
         user = self.main_window.user_input.text()

@@ -1,4 +1,8 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
+from fun_part.db_work import Db
+from gui.gui_mod import ModifyWindow
+from PyQt5.QtWidgets import QInputDialog, QMessageBox
+import sqlite3
 
 
 class Ui_MainWindow_App(object):
@@ -8,7 +12,8 @@ class Ui_MainWindow_App(object):
         MainWindow.setStyleSheet("background-color: rgb(59, 59, 59);\n"
                                 "border-color: rgb(103, 103, 103);\n"
                                 "color: rgb(212, 212, 212);")
-        
+        self.MainWindow = MainWindow
+      
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
 
@@ -50,32 +55,99 @@ class Ui_MainWindow_App(object):
         self.main_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.main_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.main_frame.setObjectName("main_frame")
+        
+        self.scroll_area = QtWidgets.QScrollArea(self.main_frame)
+        self.scroll_area.setGeometry(QtCore.QRect(26, 24, 891, 671))
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setObjectName("scroll_area")
 
-        self.list_output = QtWidgets.QLabel(self.main_frame)
-        self.list_output.setGeometry(QtCore.QRect(26, 24, 891, 671))
-        self.list_output.setText("")
-        self.list_output.setObjectName("list_output")
+        self.list_output = QtWidgets.QLabel()
+        self.list_output.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.list_output.setWordWrap(True)
+        self.scroll_area.setWidget(self.list_output)
 
         self.refresh_button = QtWidgets.QPushButton(self.main_frame)
         self.refresh_button.setGeometry(QtCore.QRect(160, 700, 141, 31))
         self.refresh_button.setObjectName("refresh_button")
+        self.refresh_button.clicked.connect(self.refresh_data)
 
         self.add_button = QtWidgets.QPushButton(self.main_frame)
         self.add_button.setGeometry(QtCore.QRect(310, 700, 141, 31))
         self.add_button.setObjectName("add_button")
+        self.add_button.clicked.connect(self.open_input_window)
 
         self.remove_button = QtWidgets.QPushButton(self.main_frame)
         self.remove_button.setGeometry(QtCore.QRect(460, 700, 141, 31))
         self.remove_button.setObjectName("remove_button")
+        self.remove_button.clicked.connect(self.remove_entry)
 
         self.modify_button = QtWidgets.QPushButton(self.main_frame)
         self.modify_button.setGeometry(QtCore.QRect(610, 700, 141, 31))
         self.modify_button.setObjectName("modify_button")
+        self.modify_button.clicked.connect(self.open_modify_window)
         
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        self.database = Db()
+    
+    def remove_entry(self):
+        id, ok = QInputDialog.getInt(self.MainWindow, 'Remove Entry', 'Enter the ID of the item to delete:')
+    
+        if ok:
+            self.database.delete_entry(id)
+        self.refresh_data()
+
+    def open_input_window(self):
+
+        name, ok_name = QInputDialog.getText(self.MainWindow, 'Add Entry', 'Name:')
+        category, ok_category = QInputDialog.getText(self.MainWindow, 'Add Entry', 'Category:')
+        price, ok_price = QInputDialog.getDouble(self.MainWindow, 'Add Entry', 'Price:')
+        description, ok_description = QInputDialog.getText(self.MainWindow, 'Add Entry', 'Description:')
+        entry_date, ok_date = QInputDialog.getText(self.MainWindow, 'Add Entry', 'Entry Date (YYYY-MM-DD):')
+
+        self.conn = sqlite3.connect("/home/dci-student/Desktop/Projects/PythonDB/db_09.01/db/products.db")
+        self.cursor = self.conn.cursor()
+        query = f"SELECT * FROM products"
+        self.cursor.execute(query)
+        entries = self.cursor.fetchall()
+        entry = entries[-1]
+        id = entry[0]+1
+        if ok_name and ok_category and ok_price and ok_description and ok_date:
+            #values = [name, category, price, description, entry_date]
+            values = f"('{id}','{name}', '{category}', {price}, '{description}', '{entry_date}')"
+            self.database.add_entry(values)
+        self.refresh_data()
+
+    def refresh_data(self):
+        #database = Db()
+        entries = self.database.view_entries()
+
+        data_str = ""
+        for entry in entries:
+            data_str += f"ID: {entry[0]}\nName: {entry[1]}\nCategory: {entry[2]}\nPrice: {entry[3]}\nDescription: {entry[4]}\nEntry date: {entry[5][:10]}\n\n"
+
+        self.list_output.setText(data_str)
+        self.list_output.setFixedWidth(886)
+        self.list_output.setStyleSheet("QLabel { padding: 10px; }")
+
+    def open_modify_window(self):
+        id, ok = QInputDialog.getInt(self.MainWindow, 'Modify Entry', 'Enter the ID of the product to modify:')
+        
+        if ok:
+            entry = self.database.get_entry("products", id)
+            
+            if entry:
+                modify_window = ModifyWindow(entry, self.database)
+                modify_window.exec_()
+                
+                self.refresh_data()
+            else:
+                QMessageBox.warning(self.MainWindow, 'Product Not Found', 'No product found with the given ID.')
+
+
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
