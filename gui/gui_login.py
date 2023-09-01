@@ -30,6 +30,12 @@ class Ui_MainWindow_Login(object):
         self.main_frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.main_frame.setObjectName("main_frame")
 
+        self.background_label = QtWidgets.QLabel(self.main_frame)
+        self.background_label.setGeometry(QtCore.QRect(0, 0, 941, 741))
+        self.background_label.setPixmap(QtGui.QPixmap("/home/dci-student/Desktop/Projects/PythonDB/db_09.01/img/warehouse.jpg"))
+        self.background_label.setScaledContents(True)
+        self.background_label.setObjectName("background_label")
+
         self.label_3 = QtWidgets.QLabel(self.main_frame)
         self.label_3.setGeometry(QtCore.QRect(340, 100, 241, 61))
         font = QtGui.QFont()
